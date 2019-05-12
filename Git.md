@@ -89,6 +89,8 @@ git add .
 
 // 提交操作 
 git commit -m "[commit message]" [file name]
+git commit -m "[commit message]" -a
 ```
 
 如果是修改文件而没有添加文件，可以直接commit就可以了
+
