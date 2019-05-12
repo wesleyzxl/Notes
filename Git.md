@@ -77,3 +77,17 @@ git init
 
   - 项目级别的签名优先级别更高
 
+### 添加提交以及查看状态操作
+
+```
+// 状态查看
+git status
+
+// 添加
+git add [file name]
+git add .
+
+// 提交操作
+git commit -m "[commit message]" [file name]
+```
+
