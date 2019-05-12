@@ -83,11 +83,12 @@ git init
 // 状态查看
 git status
 
-// 添加
+// 添加 将工作区的 新建/修改 添加到暂存区
 git add [file name]
 git add .
 
-// 提交操作
+// 提交操作 
 git commit -m "[commit message]" [file name]
 ```
 
+如果是修改文件而没有添加文件，可以直接commit就可以了
