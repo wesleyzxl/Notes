@@ -624,3 +624,78 @@ Spring Boot也可以从一下位置加载配置，优先级从高到底；高优
 
 
 **6-9 由jar包外向jar包内进行寻找，优先加载带profile**
+
+jar包外即为打包后的jar文件外面配置一个application.properties文件，然后通过命令行启动jar包即可使用外部配置文件
+
+#### 自动配置原理
+
+1. Spring Boot启动时，加载主配置类，@SpringBootApplication中开启了自动配置@EnableAutoConfiguration
+
+2. @EnableAutoConfiguration作用
+
+   利用@SpringBootApplication中的@Import(EnableAutoConfigurationImportSelector.class)给容器导入一些组件
+
+
+
+
+
+## Spring Boot日志
+
+常见的日志框架JUL, JCL Jboss-logging, logback, log4j, slf4j
+
+| 日志门面（日志的抽象层）                                     | 日志实现                                       |
+| ------------------------------------------------------------ | ---------------------------------------------- |
+| ~~JCL(Jakarta Commons Logging)~~, slf4j(Simple Logging Fcade for Java), ~~Jboss-logging~~ | Log4j, JUL(Java.util.logging), log4j2, Logback |
+
+从左边选一个门面（抽象层），右边选择一个实现
+
+- 日志门面：slf4j
+
+- 日志实现：Logback
+
+Spring Boot底层时spring框架，spring框架默认使用JCL；SpringBoot选择slf4j和Logback
+
+### slf4j使用
+
+开发时日志记录方法的调用应该调用日志抽象层里面的方法，而不是调用日志的实现类
+
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class HelloWorld {
+  public static void main(String[] args) {
+    Logger logger = LoggerFactory.getLogger(HelloWorld.class);
+    logger.info("Hello World");
+  }
+}
+```
+
+每一个日志的实现框架都有自己的配置文件，使用slf4j以后，**配置文件还是用日志实现框架本身的配置文件**
+
+![](https://www.slf4j.org/images/concrete-bindings.png)
+
+在系统中使用到其他框架时，其他框架也有自己的日志实现框架支持，为了统一日志记录，即使是别的框架也需要统一使用slf4j进行输出
+
+![](https://www.slf4j.org/images/legacy.png)
+
+如何让系统中所哟日志都统一到slf4j
+
+1. 将系统中其他日志框架先排除出去
+2. 用中间包来替换原有的日志框架
+3. 导入slf4j其他的实现
+
+
+
+### spring boot日志依赖关系
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-logging</artifactId>
+    <version>2.1.4.RELEASE</version>
+    <scope>compile</scope>
+</dependency>
+```
+
+Spring Boot使用这个来做日志功能
