@@ -747,4 +747,127 @@ Spring Boot能自动适配所有的日志，且底层使用slf4j+logback的方�
    }
    ```
 
+   ![https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring%20Boot/Snipaste_2019-05-20_14-34-02.png](https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring Boot/Snipaste_2019-05-20_14-34-02.png)
+
+   spring boot 默认使用的info级别，可以在配置文件中配置指定包或者类的日志级别，如果没有指定级别就使用spirngboot默认规定的的级别：root级别
+
+2. 修改默认配置
+
+   ```properties
+   # 修改日志级别，可以指定包或者类
+   logging.level.com.example.demo=trace
    
+   # 在当前磁盘的根目录下创建该文件夹并生成spring.log日志文件
+   logging.path=/spring/log
+   
+   # 可以指定日志文件名，如果没有路径则会创建在项目的根目录下，也可以指定路径加文件名
+   # logging.path 和 logging.file只选择一个
+   logging.file=springboot.log
+   ```
+
+   修改日志的格式
+
+   ```properties
+   # 控制台日志输出格式
+   logging.pattern.console=%d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n
+   
+   # 指定文件中日志输出格式
+   logging.pattern.file=%d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n
+   ```
+
+   日志输出格式中
+
+   ```html
+   <!--
+   	%d 代表日期时间
+   	%thread 代表线程名
+   	%-5level 级别从左显示5个字符宽度
+   	%logger{50} 表示logger名字最长50个字符，否则按照句点分割
+   	%msg 日志消息
+   	%n 换行符
+   -->
+   ```
+
+   | logging.file | logging.path | Example  | Description                      |
+   | ------------ | ------------ | -------- | -------------------------------- |
+   | (none)       | (none)       |          | 只在控制台输出                   |
+   | 指定文件名   | (none)       | my.log   | 输出日志到my.log                 |
+   | (none)       | 指定目录     | /var/log | 输出到指定目录的spring.log文件中 |
+
+3. 指定配置
+
+   其他框架中有其他的日志框架时，给类路径下放上每个日志框架自己的配置文件即可
+
+   | Logging System          | Customization                                                |
+   | ----------------------- | ------------------------------------------------------------ |
+   | Logback                 | `logback-spring.xml`, `logback-spring.groovy`, `logback.xml`, or `logback.groovy` |
+   | Log4j2                  | `log4j2-spring.xml` or `log4j2.xml`                          |
+   | JDK (Java Util Logging) | `logging.properties`                                         |
+
+   更推荐用logback-spring.xml而不是logback.xml，logback.xml直接被日志框架识别，而logback-spring.xml不会被日志框架直接加载，由spring boot解析日志配置，可以使用spring boot的profile功能。
+
+   在logback-spring.xml配置文件中使用springProfile标签实现profile功能
+
+   ```xml
+   <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+   	<layout class="ch.qos.logback.classic.PatternLayout">
+       	<springProfile name="dev">
+           	<pattern>%d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n</pattern>
+           </springProfile>
+           <!-- 在不是dev配置下使用该日志配置 -->
+           <springProfile name="!dev">
+           	<pattern>%d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n</pattern>
+           </springProfile>
+       </layout>
+   </appender>
+   ```
+
+   log4j2也是类似的方法
+
+
+
+## Spring Boot的Web开发
+
+
+
+
+
+### spring boot对静态资源的映射规则
+
+WebMvcAutoConfiguration类中的内部类WebMvcAutoConfigurationAdapter中有方法
+
+```java
+@Override
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    if (!this.resourceProperties.isAddMappings()) {
+        logger.debug("Default resource handling disabled");
+        return;
+    }
+    Duration cachePeriod = this.resourceProperties.getCache().getPeriod();
+    CacheControl cacheControl = this.resourceProperties.getCache()
+        .getCachecontrol().toHttpCacheControl();
+    if (!registry.hasMappingForPattern("/webjars/**")) {
+        customizeResourceHandlerRegistration(registry
+                                             .addResourceHandler("/webjars/**")
+                                             .addResourceLocations("classpath:/META-INF/resources/webjars/")
+                                             .setCachePeriod(getSeconds(cachePeriod))
+                                             .setCacheControl(cacheControl));
+    }
+    String staticPathPattern = this.mvcProperties.getStaticPathPattern();
+    if (!registry.hasMappingForPattern(staticPathPattern)) {
+        customizeResourceHandlerRegistration(
+            registry.addResourceHandler(staticPathPattern)
+            .addResourceLocations(getResourceLocations(
+                this.resourceProperties.getStaticLocations()))
+            .setCachePeriod(getSeconds(cachePeriod))
+            .setCacheControl(cacheControl));
+    }
+}
+```
+
+所有 /webjars/** ，都去 classpath:/META-INF/resources/webjars/ 找资源
+
+webjars：以jar包的方式引入静态资源
+
+以jQuery为例，在[webjars](<https://www.webjars.org/>)中找到并导入maven依赖
+
