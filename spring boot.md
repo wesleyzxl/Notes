@@ -867,7 +867,18 @@ public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
 所有 /webjars/** ，都去 classpath:/META-INF/resources/webjars/ 找资源
 
-webjars：以jar包的方式引入静态资源
+1. webjars：以jar包的方式引入静态资源
 
-以jQuery为例，在[webjars](<https://www.webjars.org/>)中找到并导入maven依赖
+   以jQuery为例，在[webjars](<https://www.webjars.org/>)中找到并导入maven依赖
+
+   ![https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring%20Boot/Snipaste_2019-05-21_02-25-43.png](https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring Boot/Snipaste_2019-05-21_02-25-43.png)
+
+   所以调用时从webjars目录下指定位置即可
+
+   WebMvcAutoConfiguration中成员变量
+
+    ```java
+    // 在ResourceProperties类中可以配置静态资源相关的参数，如缓存时间等
+    private final ResourceProperties resourceProperties;
+    ```
 
