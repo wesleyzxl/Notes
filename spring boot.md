@@ -689,6 +689,8 @@ public class HelloWorld {
 
 ### spring boot日志依赖关系
 
+Spring Boot使用这个来做日志功能
+
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -698,4 +700,51 @@ public class HelloWorld {
 </dependency>
 ```
 
-Spring Boot使用这个来做日志功能
+底层依赖关系
+
+![](https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring Boot/Snipaste_2019-05-16_13-17-47.png)
+
+总结
+
+- Spring Boot底层也是使用slf4j+logback的方式进行日志记录
+- Spring Boot也把其他的日志都替换成了slf4j
+- 通过中间转换包
+- 如果引入其他框架，一定要把这个框架的默认日志依赖移除掉
+
+Spring Boot能自动适配所有的日志，且底层使用slf4j+logback的方式记录日志，引入其他框架的时候只需要把这个框架依赖的日志框架排除掉
+
+### 日志的使用
+
+1. 默认配置
+
+   ```java
+   package com.example.demo;
+   
+   import org.junit.Test;
+   import org.junit.runner.RunWith;
+   import org.slf4j.Logger;
+   import org.slf4j.LoggerFactory;
+   import org.springframework.boot.test.context.SpringBootTest;
+   import org.springframework.test.context.junit4.SpringRunner;
+   
+   @RunWith(SpringRunner.class)
+   @SpringBootTest
+   public class DemoApplicationTests {
+       Logger logger = LoggerFactory.getLogger(getClass());
+   
+       @Test
+       public void testLog() {
+   
+           // 日志的级别由低到高
+           // 可以调整输出日志级别，日志只会在这个级别以及更高级别的输出
+           logger.trace("this is trance log");
+           logger.debug("this is debug log");
+           logger.info("info log");
+           logger.warn("warning log");
+           logger.error("error log");
+       }
+   
+   }
+   ```
+
+   
