@@ -865,9 +865,9 @@ public void addResourceHandlers(ResourceHandlerRegistry registry) {
 }
 ```
 
-所有 /webjars/** ，都去 classpath:/META-INF/resources/webjars/ 找资源
+1. "webjars"：以jar包的方式引入静态资源
 
-1. webjars：以jar包的方式引入静态资源
+   所有 /webjars/** ，都去 classpath:/META-INF/resources/webjars/ 找资源
 
    以jQuery为例，在[webjars](<https://www.webjars.org/>)中找到并导入maven依赖
 
@@ -876,9 +876,200 @@ public void addResourceHandlers(ResourceHandlerRegistry registry) {
    所以调用时从webjars目录下指定位置即可
 
    WebMvcAutoConfiguration中成员变量
-
-    ```java
+   
+   ```java
     // 在ResourceProperties类中可以配置静态资源相关的参数，如缓存时间等
     private final ResourceProperties resourceProperties;
-    ```
+   ```
 
+2. "/**" 
+
+   访问当前项目的任何资源
+
+   从上面addResourceHandlers方法中可知路径从ResourceProperties类中配置
+
+   ```java
+   @ConfigurationProperties(prefix = "spring.resources", ignoreUnknownFields = false)
+   public class ResourceProperties {
+   	private static final String[] CLASSPATH_RESOURCE_LOCATIONS = {
+                   "classpath:/META-INF/resources/", "classpath:/resources/",
+                   "classpath:/static/", "classpath:/public/" };
+   
+       private String[] staticLocations = CLASSPATH_RESOURCE_LOCATIONS;
+   
+       public String[] getStaticLocations() {
+               return this.staticLocations;
+   	}
+       
+       //...
+   }
+   ```
+
+   静态资源的文件夹
+
+   - "classpath:/META-INF/resources/", 
+   - "classpath:/resources/",
+   - "classpath:/static/", 
+   - "classpath:/public/" 
+
+3. 额外
+
+   在WebMvcAutoConfiguration类中的内部类WebMvcAutoConfigurationAdapter中有另外两个方法
+
+   ```java
+   // 配置网站首页
+   @Bean
+   public WelcomePageHandlerMapping welcomePageHandlerMapping(
+       ApplicationContext applicationContext) {
+       return new WelcomePageHandlerMapping(
+           new TemplateAvailabilityProviders(applicationContext),
+           applicationContext, getWelcomePage(),
+           this.mvcProperties.getStaticPathPattern());
+   }
+   
+   // 配置网页图标
+   @Configuration
+   @ConditionalOnProperty(value = "spring.mvc.favicon.enabled",
+                          matchIfMissing = true)
+   public static class FaviconConfiguration implements ResourceLoaderAware {
+   
+       private final ResourceProperties resourceProperties;
+   
+       private ResourceLoader resourceLoader;
+   
+       public FaviconConfiguration(ResourceProperties resourceProperties) {
+           this.resourceProperties = resourceProperties;
+       }
+   
+       @Override
+       public void setResourceLoader(ResourceLoader resourceLoader) {
+           this.resourceLoader = resourceLoader;
+       }
+   
+       @Bean
+       public SimpleUrlHandlerMapping faviconHandlerMapping() {
+           SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+           mapping.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
+           mapping.setUrlMap(Collections.singletonMap("**/favicon.ico",
+                                                      faviconRequestHandler()));
+           return mapping;
+       }
+   
+       @Bean
+       public ResourceHttpRequestHandler faviconRequestHandler() {
+           ResourceHttpRequestHandler requestHandler = new ResourceHttpRequestHandler();
+           requestHandler.setLocations(resolveFaviconLocations());
+           return requestHandler;
+       }
+   
+       private List<Resource> resolveFaviconLocations() {
+           String[] staticLocations = getResourceLocations(
+               this.resourceProperties.getStaticLocations());
+           List<Resource> locations = new ArrayList<>(staticLocations.length + 1);
+           Arrays.stream(staticLocations).map(this.resourceLoader::getResource)
+               .forEach(locations::add);
+           locations.add(new ClassPathResource("/"));
+           return Collections.unmodifiableList(locations);
+       }
+   
+   }
+   ```
+
+   - 欢迎页； 静态资源文件夹下的所有index.html页面；被"/**"映射；localhost:8080/   找首页
+
+   - 所有的 **/favicon.ico  都是在静态资源文件下找
+
+4. 默认的静态资源位置可以配置
+
+   在配置文件中
+
+   ```xml
+   spring.resources.static-locations=classpath:/hello/, classpath:/hi/
+   ```
+
+   可以配置多个路径，用","分割，默认的配置将会被覆盖
+
+
+
+### 模板引擎
+
+JSP、Velocity、Freemarker、Thymeleaf
+
+![https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring%20Boot/template-engine.png](https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring Boot/template-engine.png)
+
+1. 引入thymeleaf
+
+   ```xml
+   <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-thymeleaf</artifactId>
+   </dependency>
+   ```
+
+2. thymeleaf使用
+
+   spring-boot-autoconfigure的jar下org.springframework.boot.autoconfigure.thymeleaf
+
+   ```java
+   @ConfigurationProperties(prefix = "spring.thymeleaf")
+   public class ThymeleafProperties {
+   
+   	private static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
+   
+   	public static final String DEFAULT_PREFIX = "classpath:/templates/";
+   
+   	public static final String DEFAULT_SUFFIX = ".html";
+       
+       //...
+   }
+   ```
+
+   只要我们把HTML页面放在classpath:/templates/，thymeleaf就能自动渲染
+
+   - 导入thymeleaf的名称空间
+
+     ```html
+     <html lang="en" xmlns:th="http://www.thymeleaf.org">
+     ```
+
+   - 使用thymeleaf的使用
+
+     ```java
+     package com.boot.bootweb01.controller;
+     
+     import org.springframework.stereotype.Controller;
+     import org.springframework.web.bind.annotation.RequestMapping;
+     
+     import java.util.Map;
+     
+     @Controller
+     public class HelloController {
+     
+         @RequestMapping("/hello")
+         public String hello(Map<String, Object> map) {
+             map.put("hello", "world");
+             return "hello";
+         }
+     }
+     ```
+
+     
+
+     ```html
+     <!DOCTYPE html>
+     <html lang="en" xmlns:th="http://www.thymeleaf.org">
+     <head>
+         <meta charset="UTF-8">
+         <title>hello</title>
+     </head>
+     <body>
+     <!-- th:text 将div里的文本内容设置为... -->
+     <!-- 如果直接打开静态页面将呈现div里面的内容，而如果是在服务器中启动则是获取到的内容 -->
+     <div th:text="${hello}">这里是欢迎信息</div>
+     </body>
+     </html>
+     ```
+
+   - th:任意html属性；来替换原生属性的值
+
+     例如th:text, th:id, th:name等
