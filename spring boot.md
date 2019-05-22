@@ -1073,3 +1073,131 @@ JSP、Velocity、Freemarker、Thymeleaf
    - th:任意html属性；来替换原生属性的值
 
      例如th:text, th:id, th:name等
+
+     ![https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring%20Boot/2018-02-04_123955.png](https://raw.githubusercontent.com/wesleyzxl/Notes/master/pic/Spring Boot/2018-02-04_123955.png)
+
+     ```
+     Simple expressions:（表达式语法）
+         Variable Expressions: ${...}：获取变量值；OGNL；
+         		1）、获取对象的属性、调用方法
+         		2）、使用内置的基本对象：
+         			#ctx : the context object.
+         			#vars: the context variables.
+                     #locale : the context locale.
+                     #request : (only in Web Contexts) the HttpServletRequest object.
+                     #response : (only in Web Contexts) the HttpServletResponse object.
+                     #session : (only in Web Contexts) the HttpSession object.
+                     #servletContext : (only in Web Contexts) the ServletContext object.
+                     
+                     ${session.foo}
+                 3）、内置的一些工具对象：
+     #execInfo : information about the template being processed.
+     #messages : methods for obtaining externalized messages inside variables expressions, in the same way as they would be obtained using #{…} syntax.
+     #uris : methods for escaping parts of URLs/URIs
+     #conversions : methods for executing the configured conversion service (if any).
+     #dates : methods for java.util.Date objects: formatting, component extraction, etc.
+     #calendars : analogous to #dates , but for java.util.Calendar objects.
+     #numbers : methods for formatting numeric objects.
+     #strings : methods for String objects: contains, startsWith, prepending/appending, etc.
+     #objects : methods for objects in general.
+     #bools : methods for boolean evaluation.
+     #arrays : methods for arrays.
+     #lists : methods for lists.
+     #sets : methods for sets.
+     #maps : methods for maps.
+     #aggregates : methods for creating aggregates on arrays or collections.
+     #ids : methods for dealing with id attributes that might be repeated (for example, as a result of an iteration).
+     
+         Selection Variable Expressions: *{...}：选择表达式：和${}在功能上是一样；
+         	补充：配合 th:object="${session.user}：
+        <div th:object="${session.user}">
+         <p>Name: <span th:text="*{firstName}">Sebastian</span>.</p>
+         <p>Surname: <span th:text="*{lastName}">Pepper</span>.</p>
+         <p>Nationality: <span th:text="*{nationality}">Saturn</span>.</p>
+         </div>
+         
+         Message Expressions: #{...}：获取国际化内容
+         Link URL Expressions: @{...}：定义URL；
+         		@{/order/process(execId=${execId},execType='FAST')}
+         Fragment Expressions: ~{...}：片段引用表达式
+         		<div th:insert="~{commons :: main}">...</div>
+         		
+     Literals（字面量）
+           Text literals: 'one text' , 'Another one!' ,…
+           Number literals: 0 , 34 , 3.0 , 12.3 ,…
+           Boolean literals: true , false
+           Null literal: null
+           Literal tokens: one , sometext , main ,…
+     Text operations:（文本操作）
+         String concatenation: +
+         Literal substitutions: |The name is ${name}|
+     Arithmetic operations:（数学运算）
+         Binary operators: + , - , * , / , %
+         Minus sign (unary operator): -
+     Boolean operations:（布尔运算）
+         Binary operators: and , or
+         Boolean negation (unary operator): ! , not
+     Comparisons and equality:（比较运算）
+         Comparators: > , < , >= , <= ( gt , lt , ge , le )
+         Equality operators: == , != ( eq , ne )
+     Conditional operators:条件运算（三元运算符）
+         If-then: (if) ? (then)
+         If-then-else: (if) ? (then) : (else)
+         Default: (value) ?: (defaultvalue)
+     Special tokens:
+         No-Operation: _ 
+     ```
+
+     示例：
+
+     ```java
+     package com.boot.bootweb01.controller;
+     
+     import org.springframework.stereotype.Controller;
+     import org.springframework.web.bind.annotation.RequestMapping;
+     
+     import java.util.Arrays;
+     import java.util.Map;
+     
+     @Controller
+     public class HelloController {
+     
+         @RequestMapping("/hello")
+         public String hello(Map<String, Object> map) {
+             map.put("hello", "你好");
+             map.put("users", Arrays.asList("<h2>zhangsan</h2>", "wangwu"));
+             return "hello";
+         }
+     }
+     ```
+
+     模板页面
+
+     ```java
+     <!DOCTYPE html>
+     <html lang="en" xmlns:th="http://www.thymeleaf.org">
+     <head>
+         <meta charset="UTF-8">
+         <title>hello</title>
+     </head>
+     <body>
+     <!-- th:text 将div里的文本内容设置为... -->
+     <!-- 如果直接打开静态页面将呈现div里面的内容，而如果是在服务器中启动则是获取到的内容 -->
+     <div th:text="${hello}">这里是欢迎信息</div>
+     <hr/>
+     
+     <!-- th:utext="${}"不会转义特殊字符 -->
+     <!-- 在h3标签内使用会使每个遍历的字符串都加上h3标签 -->
+     <h3 th:utext="${user}" th:each="user : ${users}"></h3>
+     <hr/>
+     
+     <!-- h2里面有三个span -->
+     <h2>
+         <!-- [[]]相当于特殊字符会转义，而[()]不会转义特殊字符 -->
+         <span th:each="user : ${users}">[(${user})] </span>
+     </h2>
+     
+     </body>
+     </html>
+     ```
+
